@@ -1,0 +1,32 @@
+# RestartAnnouncer Configuration
+# Simple restart announcement plugin
+
+# Plugin handles server shutdown by defualt, change execute-shutdown: false for announcements only
+# If set to true, your batch/bash start script or a separate watchdog script must handle the server reboot
+
+# Default settings
+defaults:
+  # Default restart time if not specified (in minutes)
+  restart-time: 10
+  # Default announcement interval if not specified (in seconds)
+  announcement-interval: 60
+
+# Shutdown method
+# Options: "shutdown" (uses Bukkit.shutdown()), "stop" (uses /stop command, may not work), "restart" (uses /restart command, may not work)
+shutdown-method: "shutdown" #Change at your own risk
+
+# Execute shutdown
+# Set to false to only send announcements without stopping the server, owner must restart manually
+# If set to false, your batch/bash start script or a separate watchdog script must handle the server reboot
+execute-shutdown: true
+
+# Permissions
+permissions:
+  # Permission to start restarts
+  start: "announcer.start"
+  # Permission to stop restarts
+  stop: "announcer.stop"
+  # Permission to check status
+  status: "announcer.status"
+  # Permission to reload plugin
+  reload: "announcer.reload" 
