@@ -6,6 +6,8 @@ A simple and easy-to-use Minecraft server restart announcement plugin for Paper 
 
 ## Features
 
+- **Server Shutdown**: Shuts down your server at the end of the countdown NOTE: Plugin does not handle restart, users start script or watchdog script must handle the restart!
+- **Restart Annoucing**: Sets a time until restart and announces time left to warn server players
 - **Simple Commands**: Easy-to-use commands with tab completion
 - **Customizable Messages**: All messages can be edited in `messages.yml`
 - **Flexible Timing**: Set restart time and announcement intervals
