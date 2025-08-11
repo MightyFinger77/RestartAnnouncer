@@ -2,7 +2,7 @@ name: RestartAnnouncer
 version: '${project.version}'
 main: com.restartannouncer.RestartAnnouncerPlugin
 api-version: '1.20'
-authors: [RestartAnnouncer]
+authors: [MightyFinger77]
 description: A highly configurable restart announcement plugin with in-game configuration
 website: https://github.com/restartannouncer/RestartAnnouncer
 
@@ -37,4 +37,5 @@ permissions:
     default: op
   announcer.config:
     description: Allows modifying configuration in-game
+
     default: op 
