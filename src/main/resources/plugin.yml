@@ -2,9 +2,8 @@ name: RestartAnnouncer
 version: '${project.version}'
 main: com.restartannouncer.RestartAnnouncerPlugin
 api-version: '1.20'
-authors: [MightyFinger77]
 description: A highly configurable restart announcement plugin with in-game configuration
-website: https://github.com/restartannouncer/RestartAnnouncer
+authors: [MightyFinger77]
 
 commands:
   announcer:
@@ -17,25 +16,24 @@ permissions:
   announcer.use:
     description: Allows basic usage of the announcer command
     default: true
+  announcer.start:
+    description: Allows starting restart countdowns
+    default: op
+  announcer.stop:
+    description: Allows stopping restart countdowns
+    default: op
+  announcer.status:
+    description: Allows checking restart status and time remaining
+    default: op
+  announcer.reload:
+    description: Allows reloading the plugin configuration
+    default: op
   announcer.admin:
     description: Allows full administrative control over the plugin
     default: op
     children:
       announcer.use: true
-      announcer.schedule: true
-      announcer.cancel: true
-      announcer.reload: true
-      announcer.config: true
-  announcer.schedule:
-    description: Allows scheduling restarts
-    default: op
-  announcer.cancel:
-    description: Allows canceling scheduled restarts
-    default: op
-  announcer.reload:
-    description: Allows reloading the plugin configuration
-    default: op
-  announcer.config:
-    description: Allows modifying configuration in-game
-
-    default: op 
+      announcer.start: true
+      announcer.stop: true
+      announcer.status: true
+      announcer.reload: true 
