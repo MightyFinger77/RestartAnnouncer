@@ -84,6 +84,17 @@ public class RestartManager {
         // Calculate next announcement interval based on remaining time
         int nextInterval = getNextAnnouncementInterval(timeRemaining);
         
+        // Smart scheduling: if the next announcement would be after emergency countdown should start,
+        // schedule it earlier to ensure emergency countdown activates
+        if (timeRemaining > 60 && nextInterval > (timeRemaining - 60)) {
+            // Schedule announcement to happen just before emergency countdown starts
+            nextInterval = Math.max(1, timeRemaining - 60);
+            plugin.getLogger().info("Smart scheduling: adjusted interval to " + nextInterval + "s to ensure emergency countdown activation");
+        }
+        
+        // Log the scheduling
+        plugin.getLogger().info("Scheduling next announcement in " + nextInterval + "s (time remaining: " + timeRemaining + "s)");
+        
         announcementTask = new BukkitRunnable() {
             @Override
             public void run() {
@@ -94,33 +105,36 @@ public class RestartManager {
                 // Send announcement
                 sendAnnouncement(timeRemaining);
                 
-                // Schedule the next announcement
+                // Schedule the next announcement (this will recalculate the interval)
                 scheduleNextAnnouncement();
             }
         }.runTaskLater(plugin, nextInterval * 20L);
     }
     
     private int getNextAnnouncementInterval(int timeLeft) {
-        // If over 1 minute, always use the user's specified interval
-        if (timeLeft > 60) {
-            return announcementInterval;
-        }
+        int interval;
         
-        // Under 1 minute: calculate tiered interval and use whichever is more frequent
-        int tieredInterval;
-        if (timeLeft <= 10) {
-            // Under 10 seconds: announce every 1 second
-            tieredInterval = 1;
-        } else if (timeLeft <= 30) {
-            // Under 30 seconds: announce every 5 seconds
-            tieredInterval = 5;
+        // Under 1 minute: emergency countdown takes precedence
+        if (timeLeft <= 60) {
+            if (timeLeft <= 10) {
+                // Under 10 seconds: announce every 1 second
+                interval = 1;
+            } else if (timeLeft <= 30) {
+                // Under 30 seconds: announce every 5 seconds
+                interval = 5;
+            } else {
+                // 31-60 seconds: announce every 10 seconds
+                interval = 10;
+            }
+            
+            // Log emergency countdown activation
+            plugin.getLogger().info("Emergency countdown activated at " + timeLeft + "s - announcing every " + interval + "s");
         } else {
-            // 31-60 seconds: announce every 10 seconds
-            tieredInterval = 10;
+            // Over 1 minute: use the user's specified interval
+            interval = announcementInterval;
         }
         
-        // Use whichever interval is more frequent (lower number)
-        return Math.min(announcementInterval, tieredInterval);
+        return interval;
     }
     
     private void sendAnnouncement(int timeLeft) {
