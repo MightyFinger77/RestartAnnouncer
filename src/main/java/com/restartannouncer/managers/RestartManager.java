@@ -92,8 +92,10 @@ public class RestartManager {
             plugin.getLogger().info("Smart scheduling: adjusted interval to " + nextInterval + "s to ensure emergency countdown activation");
         }
         
-        // Log the scheduling
-        plugin.getLogger().info("Scheduling next announcement in " + nextInterval + "s (time remaining: " + timeRemaining + "s)");
+        // Only log when interval changes or at key milestones
+        if (timeRemaining % 60 == 0 || timeRemaining == 30 || timeRemaining == 10) {
+            plugin.getLogger().info("Scheduling next announcement in " + nextInterval + "s (time remaining: " + timeRemaining + "s)");
+        }
         
         announcementTask = new BukkitRunnable() {
             @Override
@@ -114,21 +116,28 @@ public class RestartManager {
     private int getNextAnnouncementInterval(int timeLeft) {
         int interval;
         
-        // Under 1 minute: emergency countdown takes precedence
+        // Under 1 minute: check if emergency countdown should override user's interval
         if (timeLeft <= 60) {
+            // Calculate emergency intervals
+            int emergencyInterval;
             if (timeLeft <= 10) {
                 // Under 10 seconds: announce every 1 second
-                interval = 1;
+                emergencyInterval = 1;
             } else if (timeLeft <= 30) {
                 // Under 30 seconds: announce every 5 seconds
-                interval = 5;
+                emergencyInterval = 5;
             } else {
                 // 31-60 seconds: announce every 10 seconds
-                interval = 10;
+                emergencyInterval = 10;
             }
             
-            // Log emergency countdown activation
-            plugin.getLogger().info("Emergency countdown activated at " + timeLeft + "s - announcing every " + interval + "s");
+            // Use whichever interval is more frequent (lower number = more frequent)
+            interval = Math.min(announcementInterval, emergencyInterval);
+            
+            // Log if emergency countdown is overriding user's interval
+            if (interval != announcementInterval) {
+                plugin.getLogger().info("Emergency countdown overriding user interval: " + announcementInterval + "s -> " + interval + "s at " + timeLeft + "s remaining");
+            }
         } else {
             // Over 1 minute: use the user's specified interval
             interval = announcementInterval;
