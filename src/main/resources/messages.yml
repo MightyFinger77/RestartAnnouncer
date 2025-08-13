@@ -11,6 +11,7 @@ commands:
   
   # Start command
   start:
+    no-permission: "<red>You don't have permission to start restarts."
     usage: "<red>Usage: /announcer start <time> <interval> [display]"
     example: "<gray>Example: /announcer start 10m 60s chat"
     already-running: "<red>A restart is already in progress!"
@@ -27,6 +28,7 @@ commands:
   
   # Status command
   status:
+    no-permission: "<red>You don't have permission to check restart status."
     running: "<blue>Restart in progress: %time% remaining"
     not-running: "<blue>No restart is currently running."
   
