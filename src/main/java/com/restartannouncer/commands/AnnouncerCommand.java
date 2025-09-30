@@ -55,9 +55,6 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
         Player player = (Player) sender;
         
         switch (subcommand) {
-            case "start":
-                handleStart(player, args);
-                break;
             case "stop":
                 handleStop(player);
                 break;
@@ -259,11 +256,22 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
     
     private void sendHelp(Player player) {
         plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "header"));
-        plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "start"));
-        plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "stop"));
-        plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "status"));
-        plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "toggle"));
-        plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "set"));
+        
+        // Only show help for commands the player has permission to use
+        if (player.hasPermission(plugin.getConfigManager().getStartPermission())) {
+            plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "start"));
+        }
+        if (player.hasPermission(plugin.getConfigManager().getStopPermission())) {
+            plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "stop"));
+        }
+        if (player.hasPermission(plugin.getConfigManager().getStatusPermission())) {
+            plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "status"));
+        }
+        if (player.hasPermission(plugin.getConfigManager().getReloadPermission())) {
+            plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "toggle"));
+            plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "set"));
+        }
+        // Help is always available
         plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "help"));
     }
 
@@ -299,7 +307,25 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
         
         if (args.length == 1) {
-            List<String> subcommands = Arrays.asList("start", "stop", "status", "reload", "toggle", "set", "help");
+            List<String> subcommands = new ArrayList<>();
+            
+            // Only show commands the player has permission to use
+            if (player.hasPermission(plugin.getConfigManager().getStartPermission())) {
+                subcommands.add("start");
+            }
+            if (player.hasPermission(plugin.getConfigManager().getStopPermission())) {
+                subcommands.add("stop");
+            }
+            if (player.hasPermission(plugin.getConfigManager().getStatusPermission())) {
+                subcommands.add("status");
+            }
+            if (player.hasPermission(plugin.getConfigManager().getReloadPermission())) {
+                subcommands.add("reload");
+                subcommands.add("toggle");
+                subcommands.add("set");
+            }
+            // Help is always available
+            subcommands.add("help");
             
             for (String subcommand : subcommands) {
                 if (subcommand.startsWith(args[0].toLowerCase())) {

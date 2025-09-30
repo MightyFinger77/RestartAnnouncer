@@ -12,7 +12,6 @@ A simple and easy-to-use Minecraft server restart announcement plugin for Paper 
 - **Customizable Messages**: All messages can be edited in `messages.yml`
 - **Flexible Timing**: Set restart time and announcement intervals
 - **In-Game Configuration**: Everything can be managed through commands
-- **This is useful for server owners that want to schedule restarts and warn their players so they can get to a safe spot**
 
 ## Commands
 
@@ -169,6 +168,8 @@ execute-shutdown: false  # Set to false for announcements only
 When `execute-shutdown` is set to `false`:
 - The plugin will send all restart announcements as normal
 - When the countdown reaches zero, it will **not** stop the server
+- Your batch/bash start script or separate watchdog script needs to handle the actual server restart
+- This is useful for server owners that want to schedule restarts and warn their players so they can get to a safe spot
 
 ## Color Codes
 
@@ -181,4 +182,3 @@ The plugin supports MiniMessage color codes in messages:
 ## Support
 
 If you need help or have suggestions, please open an issue on the GitHub repository. 
-
