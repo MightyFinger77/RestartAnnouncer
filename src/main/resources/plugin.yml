@@ -28,6 +28,9 @@ permissions:
   announcer.reload:
     description: Allows reloading the plugin configuration
     default: op
+  announcer.update:
+    description: Allows checking for plugin updates
+    default: op
   announcer.admin:
     description: Allows full administrative control over the plugin
     default: op
@@ -36,4 +39,5 @@ permissions:
       announcer.start: true
       announcer.stop: true
       announcer.status: true
-      announcer.reload: true 
+      announcer.reload: true
+      announcer.update: true 

@@ -14,8 +14,7 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
     private MessageManager messageManager;
     
     // Spigot resource ID for update checking
-    // TODO: Replace with actual Spigot resource ID when available
-    private static final int SPIGOT_RESOURCE_ID = 0; // Placeholder - update with actual resource ID
+    private static final int SPIGOT_RESOURCE_ID = 127869;
     
     // Store update info for new players
     private String latestVersion = null;
@@ -71,6 +70,28 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
     
     public MessageManager getMessageManager() {
         return messageManager;
+    }
+    
+    /**
+     * Public method to manually check for updates (can be called from commands)
+     */
+    public void checkForUpdatesManually() {
+        checkForUpdatesManually(null);
+    }
+    
+    /**
+     * Public method to manually check for updates with player feedback
+     */
+    public void checkForUpdatesManually(org.bukkit.entity.Player player) {
+        if (configManager.getConfig().getBoolean("update-checker.enabled", true)) {
+            getLogger().info("Manually checking for updates...");
+            checkForUpdates(player);
+        } else {
+            getLogger().info("Update checking is disabled in config");
+            if (player != null) {
+                player.sendMessage("§c[RestartAnnouncer] Update checking is disabled in config");
+            }
+        }
     }
     
     /**

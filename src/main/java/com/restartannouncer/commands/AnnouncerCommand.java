@@ -57,6 +57,9 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
             case "reload":
                 handleReload(sender);
                 break;
+            case "update":
+                handleUpdate(sender);
+                break;
             case "toggle":
                 handleToggle(sender);
                 break;
@@ -218,6 +221,25 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(plugin.getMessageManager().formatMessage(message));
         }
     }
+    
+    private void handleUpdate(CommandSender sender) {
+        if (!sender.hasPermission("announcer.update")) {
+            String message = "§cYou don't have permission to use this command!";
+            if (sender instanceof Player) {
+                plugin.getMessageManager().sendError((Player) sender, message);
+            } else {
+                sender.sendMessage(message);
+            }
+            return;
+        }
+        
+        if (sender instanceof Player) {
+            plugin.checkForUpdatesManually((Player) sender);
+        } else {
+            plugin.checkForUpdatesManually();
+            sender.sendMessage("Checking for updates...");
+        }
+    }
 
     private void handleToggle(CommandSender sender) {
         if (!sender.hasPermission(plugin.getConfigManager().getReloadPermission())) {
@@ -326,6 +348,9 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
             plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "toggle"));
             plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "set"));
         }
+        if (player.hasPermission("announcer.update")) {
+            plugin.getMessageManager().sendInfo(player, "§e/announcer update §7- Check for plugin updates");
+        }
         // Help is always available
         plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("help", "help"));
     }
@@ -337,6 +362,7 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.getMessageManager().getCommandMessage("help", "status"));
         sender.sendMessage(plugin.getMessageManager().getCommandMessage("help", "toggle"));
         sender.sendMessage(plugin.getMessageManager().getCommandMessage("help", "set"));
+        sender.sendMessage("§e/announcer update §7- Check for plugin updates");
         sender.sendMessage(plugin.getMessageManager().getCommandMessage("help", "help"));
     }
     
@@ -378,6 +404,9 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
                 subcommands.add("reload");
                 subcommands.add("toggle");
                 subcommands.add("set");
+            }
+            if (player.hasPermission("announcer.update")) {
+                subcommands.add("update");
             }
             // Help is always available
             subcommands.add("help");
