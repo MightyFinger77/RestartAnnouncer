@@ -2,6 +2,29 @@
 
 All notable changes to the RestartAnnouncer plugin will be documented in this file.
 
+## [1.0.3] - TBD
+
+### Added
+- Config migration system to preserve user settings when updating
+- Update checker system with dev version support
+- Version tracking for config and messages files
+
+## [1.0.2] - TBD
+
+### Added
+- Enhanced MiniMessage gradient support for Purpur/Paper servers
+- Component-based message broadcasting for better gradient rendering
+
+### Changed
+- Updated to use Paper API natively for improved Adventure API integration
+- Improved message sending to use Components directly instead of legacy format conversion
+- Enhanced debugging output for MiniMessage parsing
+
+### Technical
+- Switched from Spigot API to Paper API dependency
+- Added individual player messaging for chat display type to preserve gradient information
+- Enhanced MessageManager with Component-based methods
+
 ## [1.0.1] - 2025-08-08
 
 ### Added

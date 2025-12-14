@@ -2,7 +2,7 @@
 
 A simple and easy-to-use Minecraft server restart announcement plugin for Paper servers.
 
-**Version:** 1.0.1
+**Version:** 1.0.2
 
 ## Features
 

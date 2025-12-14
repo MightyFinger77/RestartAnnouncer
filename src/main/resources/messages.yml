@@ -1,5 +1,7 @@
 # RestartAnnouncer Messages
 # Simple restart announcement messages
+# Messages version - do not modify
+messages_version: 1
 
 # Main restart message - use %time% for time remaining
 restart-message: "<red><bold>Server will restart in <yellow>%time%<red>!"

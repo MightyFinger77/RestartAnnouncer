@@ -4,7 +4,7 @@
   <groupId>com.restartannouncer</groupId>
   <artifactId>RestartAnnouncer</artifactId>
   <name>RestartAnnouncer</name>
-  <version>1.0.1</version>
+  <version>1.0.3</version>
   <description>A highly configurable restart announcement plugin for Spigot servers</description>
   <build>
     <resources>

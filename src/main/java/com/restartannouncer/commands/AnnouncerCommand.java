@@ -46,36 +46,38 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
-        // Other commands require a player
-        if (!(sender instanceof Player)) {
-            sender.sendMessage(plugin.getMessageManager().getMessage("commands.player-only"));
-            return true;
-        }
-        
-        Player player = (Player) sender;
-        
+        // All commands now work for both console and players
         switch (subcommand) {
             case "stop":
-                handleStop(player);
+                handleStop(sender);
                 break;
             case "status":
-                handleStatus(player);
+                handleStatus(sender);
                 break;
             case "reload":
-                handleReload(player);
+                handleReload(sender);
                 break;
             case "toggle":
-                handleToggle(player);
+                handleToggle(sender);
                 break;
             case "set":
-                handleSet(player, args);
+                handleSet(sender, args);
                 break;
             case "help":
-                sendHelp(player);
+                if (sender instanceof Player) {
+                    sendHelp((Player) sender);
+                } else {
+                    sendConsoleHelp(sender);
+                }
                 break;
             default:
-                plugin.getMessageManager().sendError(player, "Unknown subcommand: " + subcommand);
-                sendHelp(player);
+                if (sender instanceof Player) {
+                    plugin.getMessageManager().sendError((Player) sender, "Unknown subcommand: " + subcommand);
+                    sendHelp((Player) sender);
+                } else {
+                    sender.sendMessage(plugin.getMessageManager().formatMessage("§cUnknown subcommand: " + subcommand));
+                    sendConsoleHelp(sender);
+                }
                 break;
         }
         
@@ -164,24 +166,14 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.getMessageManager().formatMessage(plugin.getMessageManager().getCommandMessage("stop", "success")));
     }
 
-    private void handleStop(Player player) {
-        if (!player.hasPermission(plugin.getConfigManager().getStopPermission())) {
-            plugin.getMessageManager().sendError(player, plugin.getMessageManager().getCommandMessage("stop", "no-permission"));
-            return;
-        }
-        
-        if (!plugin.getRestartManager().isRunning()) {
-            plugin.getMessageManager().sendError(player, plugin.getMessageManager().getCommandMessage("stop", "not-running"));
-            return;
-        }
-        
-        plugin.getRestartManager().stopRestart();
-        plugin.getMessageManager().sendSuccess(player, plugin.getMessageManager().getCommandMessage("stop", "success"));
-    }
-    
-    private void handleStatus(Player player) {
-        if (!player.hasPermission(plugin.getConfigManager().getStatusPermission())) {
-            plugin.getMessageManager().sendError(player, plugin.getMessageManager().getCommandMessage("status", "no-permission"));
+    private void handleStatus(CommandSender sender) {
+        if (!sender.hasPermission(plugin.getConfigManager().getStatusPermission())) {
+            String message = plugin.getMessageManager().formatMessage(plugin.getMessageManager().getCommandMessage("status", "no-permission"));
+            if (sender instanceof Player) {
+                plugin.getMessageManager().sendError((Player) sender, plugin.getMessageManager().getCommandMessage("status", "no-permission"));
+            } else {
+                sender.sendMessage(message);
+            }
             return;
         }
         
@@ -189,26 +181,52 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
             Map<String, String> placeholders = plugin.getMessageManager().createPlaceholders(
                 "time", plugin.getRestartManager().getTimeRemainingFormatted()
             );
-            plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("status", "running", placeholders));
+            String message = plugin.getMessageManager().getCommandMessage("status", "running", placeholders);
+            if (sender instanceof Player) {
+                plugin.getMessageManager().sendInfo((Player) sender, message);
+            } else {
+                sender.sendMessage(plugin.getMessageManager().formatMessage(message));
+            }
         } else {
-            plugin.getMessageManager().sendInfo(player, plugin.getMessageManager().getCommandMessage("status", "not-running"));
+            String message = plugin.getMessageManager().getCommandMessage("status", "not-running");
+            if (sender instanceof Player) {
+                plugin.getMessageManager().sendInfo((Player) sender, message);
+            } else {
+                sender.sendMessage(plugin.getMessageManager().formatMessage(message));
+            }
         }
     }
     
-    private void handleReload(Player player) {
-        if (!player.hasPermission(plugin.getConfigManager().getReloadPermission())) {
-            plugin.getMessageManager().sendError(player, plugin.getMessageManager().getCommandMessage("reload", "no-permission"));
+    private void handleReload(CommandSender sender) {
+        if (!sender.hasPermission(plugin.getConfigManager().getReloadPermission())) {
+            String message = plugin.getMessageManager().formatMessage(plugin.getMessageManager().getCommandMessage("reload", "no-permission"));
+            if (sender instanceof Player) {
+                plugin.getMessageManager().sendError((Player) sender, plugin.getMessageManager().getCommandMessage("reload", "no-permission"));
+            } else {
+                sender.sendMessage(message);
+            }
             return;
         }
         
         plugin.getConfigManager().reloadConfig();
         plugin.getMessageManager().reloadMessages();
-        plugin.getMessageManager().sendSuccess(player, plugin.getMessageManager().getCommandMessage("reload", "success"));
+        
+        String message = plugin.getMessageManager().getCommandMessage("reload", "success");
+        if (sender instanceof Player) {
+            plugin.getMessageManager().sendSuccess((Player) sender, message);
+        } else {
+            sender.sendMessage(plugin.getMessageManager().formatMessage(message));
+        }
     }
 
-    private void handleToggle(Player player) {
-        if (!player.hasPermission(plugin.getConfigManager().getReloadPermission())) {
-            plugin.getMessageManager().sendError(player, plugin.getMessageManager().getCommandMessage("reload", "no-permission"));
+    private void handleToggle(CommandSender sender) {
+        if (!sender.hasPermission(plugin.getConfigManager().getReloadPermission())) {
+            String message = plugin.getMessageManager().formatMessage(plugin.getMessageManager().getCommandMessage("reload", "no-permission"));
+            if (sender instanceof Player) {
+                plugin.getMessageManager().sendError((Player) sender, plugin.getMessageManager().getCommandMessage("reload", "no-permission"));
+            } else {
+                sender.sendMessage(message);
+            }
             return;
         }
 
@@ -219,22 +237,42 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
         plugin.saveConfig();
         
         String status = newSetting ? "enabled" : "disabled";
-        plugin.getMessageManager().sendSuccess(player, "§aExecute shutdown " + status + ". Run §e/announcer reload§a to apply changes.");
+        String toggleMessage = "§aExecute shutdown " + status + ". Run §e/announcer reload§a to apply changes.";
+        if (sender instanceof Player) {
+            plugin.getMessageManager().sendSuccess((Player) sender, toggleMessage);
+        } else {
+            sender.sendMessage(plugin.getMessageManager().formatMessage(toggleMessage));
+        }
     }
     
-    private void handleSet(Player player, String[] args) {
-        if (!player.hasPermission(plugin.getConfigManager().getReloadPermission())) {
-            plugin.getMessageManager().sendError(player, plugin.getMessageManager().getCommandMessage("reload", "no-permission"));
+    private void handleSet(CommandSender sender, String[] args) {
+        if (!sender.hasPermission(plugin.getConfigManager().getReloadPermission())) {
+            String message = plugin.getMessageManager().formatMessage(plugin.getMessageManager().getCommandMessage("reload", "no-permission"));
+            if (sender instanceof Player) {
+                plugin.getMessageManager().sendError((Player) sender, plugin.getMessageManager().getCommandMessage("reload", "no-permission"));
+            } else {
+                sender.sendMessage(message);
+            }
             return;
         }
         
         if (args.length < 3) {
-            plugin.getMessageManager().sendError(player, "§cUsage: /announcer set message <message>");
+            String errorMsg = "§cUsage: /announcer set message <message>";
+            if (sender instanceof Player) {
+                plugin.getMessageManager().sendError((Player) sender, errorMsg);
+            } else {
+                sender.sendMessage(plugin.getMessageManager().formatMessage(errorMsg));
+            }
             return;
         }
         
         if (!args[1].equalsIgnoreCase("message")) {
-            plugin.getMessageManager().sendError(player, "§cUsage: /announcer set message <message>");
+            String errorMsg = "§cUsage: /announcer set message <message>";
+            if (sender instanceof Player) {
+                plugin.getMessageManager().sendError((Player) sender, errorMsg);
+            } else {
+                sender.sendMessage(plugin.getMessageManager().formatMessage(errorMsg));
+            }
             return;
         }
         
@@ -242,15 +280,32 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
         String newMessage = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
         
         if (newMessage.trim().isEmpty()) {
-            plugin.getMessageManager().sendError(player, "§cMessage cannot be empty!");
+            String errorMsg = "§cMessage cannot be empty!";
+            if (sender instanceof Player) {
+                plugin.getMessageManager().sendError((Player) sender, errorMsg);
+            } else {
+                sender.sendMessage(plugin.getMessageManager().formatMessage(errorMsg));
+            }
             return;
         }
         
         if (plugin.getMessageManager().setRestartMessage(newMessage)) {
-            plugin.getMessageManager().sendSuccess(player, "§aRestart message updated successfully!");
-            plugin.getMessageManager().sendInfo(player, "§7New message: " + plugin.getMessageManager().formatMessage(newMessage));
+            String successMsg = "§aRestart message updated successfully!";
+            String infoMsg = "§7New message: " + plugin.getMessageManager().formatMessage(newMessage);
+            if (sender instanceof Player) {
+                plugin.getMessageManager().sendSuccess((Player) sender, successMsg);
+                plugin.getMessageManager().sendInfo((Player) sender, infoMsg);
+            } else {
+                sender.sendMessage(plugin.getMessageManager().formatMessage(successMsg));
+                sender.sendMessage(plugin.getMessageManager().formatMessage(infoMsg));
+            }
         } else {
-            plugin.getMessageManager().sendError(player, "§cFailed to update restart message. Check console for errors.");
+            String errorMsg = "§cFailed to update restart message. Check console for errors.";
+            if (sender instanceof Player) {
+                plugin.getMessageManager().sendError((Player) sender, errorMsg);
+            } else {
+                sender.sendMessage(plugin.getMessageManager().formatMessage(errorMsg));
+            }
         }
     }
     

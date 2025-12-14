@@ -1,5 +1,11 @@
 # RestartAnnouncer Configuration
 # Simple restart announcement plugin
+# Config version - do not modify
+config_version: 1
+
+# Update checker settings
+update-checker:
+  enabled: true
 
 # Plugin handles server shutdown by defualt, change execute-shutdown: false for announcements only
 # If set to true, your batch/bash start script or a separate watchdog script must handle the server reboot
