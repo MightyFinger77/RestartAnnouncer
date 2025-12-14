@@ -259,7 +259,7 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
                 }
             }
             
-            // Base versions are equal - check if we should update from dev to release
+            // Base versions are equal - check if we should update from dev to release or dev to dev
             if (baseLatest.equals(baseCurrent)) {
                 // If latest is a release version and current is a dev version (same base), prompt for update
                 if (!latestIsDev && currentIsDev) {
@@ -267,11 +267,49 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
                         getLogger().info("[DEBUG] Base versions equal - latest is release, current is dev, prompting for update");
                     }
                     return true; // Dev build should update to release version
+                } 
+                // If both are dev versions, compare dev numbers and letters
+                else if (latestIsDev && currentIsDev) {
+                    // Extract dev version info (e.g., "Dev3b" -> number=3, letter='b')
+                    int latestDevNum = extractDevNumber(cleanLatest);
+                    int currentDevNum = extractDevNumber(cleanCurrent);
+                    char latestDevLetter = extractDevLetter(cleanLatest);
+                    char currentDevLetter = extractDevLetter(cleanCurrent);
+                    
+                    if (isDebugEnabled()) {
+                        getLogger().info("[DEBUG] Both are dev versions - Latest: Dev" + latestDevNum + latestDevLetter + ", Current: Dev" + currentDevNum + currentDevLetter);
+                    }
+                    
+                    // Compare dev numbers first
+                    if (latestDevNum > currentDevNum) {
+                        if (isDebugEnabled()) {
+                            getLogger().info("[DEBUG] Latest dev number is higher, prompting for update");
+                        }
+                        return true; // Newer dev number
+                    } else if (latestDevNum < currentDevNum) {
+                        if (isDebugEnabled()) {
+                            getLogger().info("[DEBUG] Current dev number is higher, no update needed");
+                        }
+                        return false; // Current dev number is higher
+                    } else {
+                        // Dev numbers are equal, compare letters (a < b)
+                        if (latestDevLetter > currentDevLetter) {
+                            if (isDebugEnabled()) {
+                                getLogger().info("[DEBUG] Latest dev letter is higher, prompting for update");
+                            }
+                            return true; // Newer dev letter (e.g., b > a)
+                        } else {
+                            if (isDebugEnabled()) {
+                                getLogger().info("[DEBUG] Current dev version is same or newer, no update needed");
+                            }
+                            return false; // Same or older dev letter
+                        }
+                    }
                 } else {
                     if (isDebugEnabled()) {
                         getLogger().info("[DEBUG] Base versions equal - no update needed");
                     }
-                    return false; // Both are same type (both dev or both release), or current is release
+                    return false; // Both are release versions, or current is release and latest is dev (shouldn't happen)
                 }
             }
             
@@ -290,6 +328,36 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
             }
             return result;
         }
+    }
+    
+    /**
+     * Extract the dev number from a version string (e.g., "1.1.4-Dev3b" -> 3)
+     * Returns 0 if no dev number is found
+     */
+    private int extractDevNumber(String version) {
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(?i)[-_]dev(\\d+)");
+        java.util.regex.Matcher matcher = pattern.matcher(version);
+        if (matcher.find()) {
+            try {
+                return Integer.parseInt(matcher.group(1));
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+        return 0;
+    }
+    
+    /**
+     * Extract the dev letter from a version string (e.g., "1.1.4-Dev3b" -> 'b')
+     * Returns 'a' if no dev letter is found (default)
+     */
+    private char extractDevLetter(String version) {
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(?i)[-_]dev\\d+([a-z])");
+        java.util.regex.Matcher matcher = pattern.matcher(version);
+        if (matcher.find()) {
+            return matcher.group(1).toLowerCase().charAt(0);
+        }
+        return 'a'; // Default to 'a' if no letter found
     }
 
 } 
