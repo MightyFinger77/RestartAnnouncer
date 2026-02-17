@@ -4,14 +4,20 @@ import com.restartannouncer.commands.AnnouncerCommand;
 import com.restartannouncer.managers.ConfigManager;
 import com.restartannouncer.managers.RestartManager;
 import com.restartannouncer.managers.MessageManager;
+import com.restartannouncer.managers.ScheduledRestartManager;
+import com.restartannouncer.util.BackupChecker;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class RestartAnnouncerPlugin extends JavaPlugin {
-    
+
     private static RestartAnnouncerPlugin instance;
     private ConfigManager configManager;
     private RestartManager restartManager;
     private MessageManager messageManager;
+    private BackupChecker backupChecker;
+    private ScheduledRestartManager scheduledRestartManager;
+    /** True when the current restart was started by scheduled restart (so we use backup delay if configured). */
+    private boolean scheduledRestartActive;
     
     // Spigot resource ID for update checking
     private static final int SPIGOT_RESOURCE_ID = 127869;
@@ -28,32 +34,55 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
         this.configManager = new ConfigManager(this);
         this.messageManager = new MessageManager(this);
         this.restartManager = new RestartManager(this);
-        
+        this.backupChecker = new BackupChecker(this);
+
         // Load configuration
         configManager.loadConfig();
         messageManager.loadMessages();
-        
+
         // Register commands
         AnnouncerCommand announcerCommand = new AnnouncerCommand(this);
         getCommand("announcer").setExecutor(announcerCommand);
         getCommand("announcer").setTabCompleter(announcerCommand);
-        
+
+        // Scheduled restart (if enabled)
+        applyScheduledRestartFromConfig();
+
         // Check for updates if enabled
         if (configManager.getConfig().getBoolean("update-checker.enabled", true)) {
             checkForUpdates();
         }
-        
+
         // Plugin is ready
-        
+
         getLogger().info("RestartAnnouncer has been enabled!");
     }
     
     @Override
     public void onDisable() {
+        if (scheduledRestartManager != null) {
+            scheduledRestartManager.stop();
+            scheduledRestartManager = null;
+        }
         if (restartManager != null) {
             restartManager.stopRestart();
         }
         getLogger().info("RestartAnnouncer has been disabled!");
+    }
+
+    /**
+     * Apply scheduled-restart.enabled from config. Stops the scheduler if disabled, starts it if enabled.
+     * Called on enable and when /announcer reload is used.
+     */
+    public void applyScheduledRestartFromConfig() {
+        if (scheduledRestartManager != null) {
+            scheduledRestartManager.stop();
+            scheduledRestartManager = null;
+        }
+        if (configManager.isScheduledRestartEnabled()) {
+            scheduledRestartManager = new ScheduledRestartManager(this);
+            scheduledRestartManager.start();
+        }
     }
     
     public static RestartAnnouncerPlugin getInstance() {
@@ -71,7 +100,19 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
     public MessageManager getMessageManager() {
         return messageManager;
     }
-    
+
+    public void setScheduledRestartActive(boolean scheduledRestartActive) {
+        this.scheduledRestartActive = scheduledRestartActive;
+    }
+
+    public boolean isScheduledRestartActive() {
+        return scheduledRestartActive;
+    }
+
+    public boolean isBackupRunning() {
+        return backupChecker != null && backupChecker.isBackupRunning();
+    }
+
     /**
      * Public method to manually check for updates (can be called from commands)
      */

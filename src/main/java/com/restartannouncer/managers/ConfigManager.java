@@ -147,6 +147,41 @@ public class ConfigManager {
         return config.getBoolean("execute-shutdown", true);
     }
     
+    // Scheduled restart (system time, 24hr format)
+    public boolean isScheduledRestartEnabled() {
+        return config.getBoolean("scheduled-restart.enabled", false);
+    }
+    
+    /** Time in 24hr format, 4 digits HHmm (e.g. 0400 = 4:00 AM, 1600 = 4:00 PM). Accepts number (400) or string ("0400"). */
+    public String getScheduledRestartTime() {
+        Object v = config.get("scheduled-restart.time");
+        if (v == null) {
+            return "0400";
+        }
+        if (v instanceof Number) {
+            return String.format("%04d", ((Number) v).intValue());
+        }
+        String s = v.toString().trim().replace(":", "");
+        if (s.isEmpty()) {
+            return "0400";
+        }
+        int n = Integer.parseInt(s);
+        return String.format("%04d", n);
+    }
+    
+    public int getScheduledRestartReminderIntervalHours() {
+        return config.getInt("scheduled-restart.reminder-interval-hours", 4);
+    }
+    
+    public boolean shouldWaitForBackup() {
+        return config.getBoolean("scheduled-restart.wait-for-backup", true);
+    }
+
+    /** Seconds to wait after countdown hits 0 before first backup check (default 60). Only used when wait-for-backup is true. */
+    public int getWaitForBackupDelaySeconds() {
+        return Math.max(1, config.getInt("scheduled-restart.wait-for-backup-delay", 60));
+    }
+
     /**
      * Merge default config (with comments) with user config (with values)
      * Simple approach: Use default structure/comments, replace values with user's where they exist

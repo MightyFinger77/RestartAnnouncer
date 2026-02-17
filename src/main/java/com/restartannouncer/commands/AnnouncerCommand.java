@@ -213,7 +213,8 @@ public class AnnouncerCommand implements CommandExecutor, TabCompleter {
         
         plugin.getConfigManager().reloadConfig();
         plugin.getMessageManager().reloadMessages();
-        
+        plugin.applyScheduledRestartFromConfig();
+
         String message = plugin.getMessageManager().getCommandMessage("reload", "success");
         if (sender instanceof Player) {
             plugin.getMessageManager().sendSuccess((Player) sender, message);

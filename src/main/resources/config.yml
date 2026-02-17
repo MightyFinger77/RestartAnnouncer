@@ -1,7 +1,7 @@
 # RestartAnnouncer Configuration
 # Simple restart announcement plugin
 # Config version - do not modify
-config_version: 1
+config_version: 2
 
 # Update checker settings
 update-checker:
@@ -16,6 +16,19 @@ defaults:
   restart-time: 10
   # Default announcement interval if not specified (in seconds)
   announcement-interval: 60
+
+# Scheduled restart (uses system time, 24hr format)
+# When enabled: reminds players every 4 hours, then starts 1hr countdown at the scheduled time minus 1 hour
+scheduled-restart:
+  enabled: false
+  # Time in 24hr format, 4 digits HHmm (e.g. 0400 = 4:00 AM, 1600 = 4:00 PM)
+  time: "0400"
+  # How often to remind players of the scheduled time (in hours), when more than 1hr until scheduled restart
+  reminder-interval-hours: 4
+  # When true, wait for backup to finish (if running) then delay by wait-for-backup-delay before restarting.
+  wait-for-backup: true
+  # Seconds to delay the restart after backup finishes. Only used when wait-for-backup is true.
+  wait-for-backup-delay: 60
 
 # Shutdown method
 # Options: "shutdown" (uses Bukkit.shutdown()), "stop" (uses /stop command, may not work), "restart" (uses /restart command, may not work)
