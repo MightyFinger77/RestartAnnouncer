@@ -1,0 +1,57 @@
+# RestartAnnouncer Messages
+# Simple restart announcement messages
+# Messages version - do not modify
+messages_version: 2
+
+# Main restart message - use %time% for time remaining
+restart-message: "<red><bold>Server will restart in <yellow>%time%<red>!"
+
+# Scheduled restart messages
+scheduled-restart:
+  # Reminder every N hours - use %time% for the scheduled time (e.g. 16:00), %timezone% for system timezone (e.g. CST)
+  reminder: "<yellow>Scheduled server restart at <white>%time% <yellow>%timezone%."
+  # Shown when restart is delayed because a backup is running (repeats every 2 mins until backup finishes)
+  backup-delayed: "<yellow>Restart delayed – backup in progress. Will restart when backup completes."
+
+# Command messages
+commands:
+  no-permission: "<red>You don't have permission to use this command."
+  player-only: "This command can only be used by players."
+  
+  # Start command
+  start:
+    no-permission: "<red>You don't have permission to start restarts."
+    usage: "<red>Usage: /announcer start <time> <interval> [display]"
+    example: "<gray>Example: /announcer start 10m 60s chat"
+    already-running: "<red>A restart is already in progress!"
+    success: "<green>Restart scheduled in %time% with announcements every %interval%"
+    invalid-time: "<red>Invalid time format. Use: 5m, 10m, 30m, 1h, etc."
+    invalid-interval: "<red>Invalid interval format. Use: 30s, 60s, 2m, etc."
+    invalid-display: "<red>Invalid display type. Use: chat, bossbar, title"
+  
+  # Stop command
+  stop:
+    no-permission: "<red>You don't have permission to stop restarts."
+    not-running: "<blue>No restart is currently running."
+    success: "<green>Restart cancelled."
+  
+  # Status command
+  status:
+    no-permission: "<red>You don't have permission to check restart status."
+    running: "<blue>Restart in progress: %time% remaining"
+    not-running: "<blue>No restart is currently running."
+  
+  # Help command
+  help:
+    header: "<blue>RestartAnnouncer Commands:"
+    start: "  /announcer start <time> <interval> [display] - Start a restart countdown"
+    stop: "  /announcer stop - Cancel the current restart"
+    status: "  /announcer status - Check restart status"
+    toggle: "  /announcer toggle - Toggle execute-shutdown setting"
+    set: "  /announcer set message <message> - Set the restart announcement message"
+    help: "  /announcer help - Show this help"
+  
+  # Reload command
+  reload:
+    no-permission: "<red>You don't have permission to reload the plugin."
+    success: "<green>Plugin reloaded successfully." 
