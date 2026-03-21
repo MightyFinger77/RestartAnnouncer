@@ -1,15 +1,15 @@
 # RestartAnnouncer Messages
 # Simple restart announcement messages
 # Messages version - do not modify
-messages_version: 2
+messages_version: 3
 
 # Main restart message - use %time% for time remaining
 restart-message: "<red><bold>Server will restart in <yellow>%time%<red>!"
 
 # Scheduled restart messages
 scheduled-restart:
-  # Reminder every N hours - use %time% for the scheduled time (e.g. 16:00), %timezone% for system timezone (e.g. CST)
-  reminder: "<yellow>Scheduled server restart at <white>%time% <yellow>%timezone%."
+  # Reminder every N hours - %time% is clock (DAILY) or date+time (WEEKLY); %timezone% is system zone (e.g. CST)
+  reminder: "<yellow>Next scheduled restart: <white>%time% <gray>(%timezone%)"
   # Shown when restart is delayed because a backup is running (repeats every 2 mins until backup finishes)
   backup-delayed: "<yellow>Restart delayed – backup in progress. Will restart when backup completes."
 

@@ -1,7 +1,7 @@
 # RestartAnnouncer Configuration
 # Simple restart announcement plugin
 # Config version - do not modify
-config_version: 2
+config_version: 3
 
 # Update checker settings
 update-checker:
@@ -23,7 +23,17 @@ scheduled-restart:
   enabled: false
   # Time in 24hr format, 4 digits HHmm (e.g. 0400 = 4:00 AM, 1600 = 4:00 PM)
   time: "0400"
-  # How often to remind players of the scheduled time (in hours), when more than 1hr until scheduled restart
+  # DAILY — every day at time
+  # WEEKLY — every interval-weeks on day-of-week at time (interval-weeks: 1 = weekly, 2 = every two weeks, …)
+  recurrence: DAILY
+  # For WEEKLY: MONDAY … SUNDAY (or MON, TUE, …). Ignored for DAILY.
+  day-of-week: SUNDAY
+  # For WEEKLY only. 1 = every week, 2 = biweekly, etc. If greater than 1, week-anchor-date is required (YYYY-MM-DD on that weekday).
+  interval-weeks: 1
+  # For WEEKLY with interval-weeks > 1 only: any occurrence date (must match day-of-week). Restarts every N weeks from this date.
+  week-anchor-date: "2026-01-04"
+  # Reminders use wall-clock hours (broadcast at :00 when hour is divisible by this value), only while more than 1hr until restart.
+  # For WEEKLY or longer intervals between restarts, a low value (e.g. 4) can spam chat for days — consider 12, 24, or higher.
   reminder-interval-hours: 4
   # When true, wait for backup to finish (if running) then delay by wait-for-backup-delay before restarting.
   wait-for-backup: true

@@ -1,5 +1,5 @@
 name: RestartAnnouncer
-version: '1.0.6'
+version: '1.1.0-Dev1a'
 main: com.restartannouncer.RestartAnnouncerPlugin
 api-version: '1.20'
 description: A highly configurable restart announcement plugin with in-game configuration
@@ -40,4 +40,6 @@ permissions:
       announcer.stop: true
       announcer.status: true
       announcer.reload: true
-      announcer.update: true 
+      announcer.update: true
+folia-supported: true
+

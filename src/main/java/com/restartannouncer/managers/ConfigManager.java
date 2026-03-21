@@ -32,6 +32,21 @@ public class ConfigManager {
         this.config = plugin.getConfig();
     }
     
+    private boolean hasMissingLeafKeysComparedToJarDefaults(YamlConfiguration current, YamlConfiguration defaults, String fileVersionKey) {
+        List<String> missing = new ArrayList<>();
+        for (String key : defaults.getKeys(true)) {
+            if (defaults.isConfigurationSection(key)) continue;
+            if (key.equals(fileVersionKey)) continue;
+            if (key.equals("config_version") || key.equals("messages_version") || key.equals("gui_version")) continue;
+            if (!current.contains(key)) missing.add(key);
+        }
+        if (!missing.isEmpty()) {
+            plugin.getLogger().info("Config migration: merging missing keys from jar defaults: " + String.join(", ", missing));
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Migrate config.yml to add missing options from newer versions
      * Preserves user values while adding new options and comments
@@ -72,8 +87,8 @@ public class ConfigManager {
             int defaultVersion = defaultConfig.getInt("config_version", 1);
             int currentVersion = currentConfig.getInt("config_version", 0); // 0 means old config without version
             
-            // If versions match and config has version field, no migration needed
-            if (currentVersion == defaultVersion && currentConfig.contains("config_version")) {
+            boolean missingLeaves = hasMissingLeafKeysComparedToJarDefaults(currentConfig, defaultConfig, "config_version");
+            if (currentVersion == defaultVersion && currentConfig.contains("config_version") && !missingLeaves) {
                 return; // Config is up to date
             }
             

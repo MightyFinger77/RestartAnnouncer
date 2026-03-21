@@ -6,7 +6,9 @@ import com.restartannouncer.managers.RestartManager;
 import com.restartannouncer.managers.MessageManager;
 import com.restartannouncer.managers.ScheduledRestartManager;
 import com.restartannouncer.util.BackupChecker;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import java.util.function.Consumer;
 
 public class RestartAnnouncerPlugin extends JavaPlugin {
 
@@ -25,6 +27,54 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
     // Store update info for new players
     private String latestVersion = null;
     private boolean updateAvailable = false;
+
+    /** Folia only — do not use {@code getGlobalRegionScheduler()} for detection; Paper exposes it too. */
+    private boolean isFolia() {
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            return true;
+        } catch (ClassNotFoundException ignored) {
+            return false;
+        }
+    }
+
+    private void runSync(Runnable task) {
+        if (isFolia()) {
+            try {
+                Object scheduler = getServer().getClass().getMethod("getGlobalRegionScheduler").invoke(getServer());
+                scheduler.getClass().getMethod("execute", Plugin.class, Runnable.class).invoke(scheduler, this, task);
+                return;
+            } catch (Exception ignored) {
+            }
+        }
+        getServer().getScheduler().runTask(this, task);
+    }
+
+    private void runLater(Runnable task, long delayTicks) {
+        if (isFolia()) {
+            try {
+                Object scheduler = getServer().getClass().getMethod("getGlobalRegionScheduler").invoke(getServer());
+                scheduler.getClass().getMethod("runDelayed", Plugin.class, Consumer.class, long.class)
+                        .invoke(scheduler, this, (Consumer<Object>) t -> task.run(), delayTicks);
+                return;
+            } catch (Exception ignored) {
+            }
+        }
+        getServer().getScheduler().runTaskLater(this, task, delayTicks);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void runAsync(Runnable task) {
+        if (isFolia()) {
+            try {
+                Object async = getServer().getClass().getMethod("getAsyncScheduler").invoke(getServer());
+                async.getClass().getMethod("runNow", Plugin.class, Consumer.class)
+                        .invoke(async, this, (Consumer<Object>) st -> task.run());
+                return;
+            } catch (Exception ignored) { }
+        }
+        getServer().getScheduler().runTaskAsynchronously(this, task);
+    }
     
     @Override
     public void onEnable() {
@@ -146,7 +196,7 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
      * Check for plugin updates using SpigotMC API with player feedback
      */
     private void checkForUpdates(org.bukkit.entity.Player player) {
-        getServer().getScheduler().runTaskAsynchronously(this, () -> {
+        runAsync(() -> {
             try {
                 String url = "https://api.spigotmc.org/legacy/update.php?resource=" + SPIGOT_RESOURCE_ID;
                 java.net.URLConnection connection = java.net.URI.create(url).toURL().openConnection();
@@ -171,7 +221,7 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
                     this.latestVersion = latestVersion;
                     this.updateAvailable = true;
                     
-                    getServer().getScheduler().runTask(this, () -> {
+                    runSync(() -> {
                         getLogger().info("§a[RestartAnnouncer] Update available: " + latestVersion);
                         getLogger().info("§a[RestartAnnouncer] Current version: " + currentVersion);
                         getLogger().info("§a[RestartAnnouncer] Download: https://www.spigotmc.org/resources/" + SPIGOT_RESOURCE_ID);
@@ -183,7 +233,7 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
                         }
                         
                         // Send update message to all online OP'd players with a delay to show after MOTD
-                        getServer().getScheduler().runTaskLater(this, () -> {
+                        runLater(() -> {
                             for (org.bukkit.entity.Player onlinePlayer : getServer().getOnlinePlayers()) {
                                 if (onlinePlayer.isOp() && (player == null || !onlinePlayer.equals(player))) {
                                     onlinePlayer.sendMessage("§a[RestartAnnouncer] §eUpdate available: §f" + latestVersion + " §7(current: " + currentVersion + ")");
@@ -200,7 +250,7 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
                     
                     // Send "up to date" message to the player who requested the check
                     if (player != null) {
-                        getServer().getScheduler().runTask(this, () -> {
+                        runSync(() -> {
                             player.sendMessage("§a[RestartAnnouncer] §aPlugin is up to date (version " + currentVersion + ")");
                         });
                     }
@@ -212,7 +262,7 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
                 
                 // Send error message to the player who requested the check
                 if (player != null) {
-                    getServer().getScheduler().runTask(this, () -> {
+                    runSync(() -> {
                         player.sendMessage("§c[RestartAnnouncer] Could not check for updates: " + e.getMessage());
                     });
                 }
