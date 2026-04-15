@@ -1,5 +1,5 @@
 name: RestartAnnouncer
-version: '1.1.0-Dev1a'
+version: '1.1.0-Dev2a'
 main: com.restartannouncer.RestartAnnouncerPlugin
 api-version: '1.20'
 description: A highly configurable restart announcement plugin with in-game configuration

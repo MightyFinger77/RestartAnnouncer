@@ -1,4 +1,14 @@
 # Changelog
+## [1.1.0-Dev2a] - 2026-04-14
+
+### Fixed
+- **Folia**: Scheduled restarts and countdowns no longer call deprecated `BukkitScheduler.runTaskTimer` / `runTaskLater` on the global scheduler (which throws `UnsupportedOperationException` on Folia). Repeating and delayed work now uses `GlobalRegionScheduler` (`runAtFixedRate`, `runDelayed`) with Paper fallback unchanged.
+
+## [1.1.0-Dev1b] - 2026-03-21
+
+### Changed
+- Decorative default config header; `config_version` → 4.
+
 
 ## 1.1.0-Dev1a (2026-03-19)
 

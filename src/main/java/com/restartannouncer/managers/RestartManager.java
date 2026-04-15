@@ -8,14 +8,12 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
 public class RestartManager {
 
     private final RestartAnnouncerPlugin plugin;
-    private BukkitTask restartTask;
-    private BukkitTask announcementTask;
+    private RestartAnnouncerPlugin.TaskHandle restartTask;
+    private RestartAnnouncerPlugin.TaskHandle announcementTask;
     private int timeRemaining;
     private int initialTimeRemaining; // Store initial time for progress calculation
     private int announcementInterval;
@@ -47,48 +45,45 @@ public class RestartManager {
         this.isRunning = true;
         plugin.setScheduledRestartActive(isScheduledRestart);
 
-        // Start the main countdown
-        restartTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                timeRemaining--;
+        // Start the main countdown (global region on Folia — not BukkitScheduler.runTaskTimer)
+        restartTask = plugin.scheduleGlobalRepeating(() -> {
+            timeRemaining--;
 
-                if (timeRemaining <= 0) {
-                    // Cancel countdown tasks
-                    if (restartTask != null) {
-                        restartTask.cancel();
-                        restartTask = null;
-                    }
-                    if (announcementTask != null) {
-                        announcementTask.cancel();
-                        announcementTask = null;
-                    }
-                    if (bossBar != null) {
-                        bossBar.removeAll();
-                        bossBar = null;
-                    }
+            if (timeRemaining <= 0) {
+                // Cancel countdown tasks
+                if (restartTask != null) {
+                    restartTask.cancel();
+                    restartTask = null;
+                }
+                if (announcementTask != null) {
+                    announcementTask.cancel();
+                    announcementTask = null;
+                }
+                if (bossBar != null) {
+                    bossBar.removeAll();
+                    bossBar = null;
+                }
 
-                    if (plugin.getConfigManager().shouldExecuteShutdown()) {
-                        // Only wait for backup if one is actually running (scheduled + wait-for-backup enabled)
-                        boolean backupRunning = plugin.isScheduledRestartActive() && plugin.getConfigManager().shouldWaitForBackup() && plugin.isBackupRunning();
-                        if (backupRunning) {
-                            plugin.getMessageManager().broadcastMessage(plugin.getMessageManager().getMessage("scheduled-restart.backup-delayed", "§eRestart delayed – backup in progress. Will restart when backup completes."));
-                            Bukkit.getScheduler().runTaskLater(plugin, RestartManager.this::waitForBackupThenShutdown, 20L);
-                        } else {
-                            // Normal restart
-                            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                                plugin.getMessageManager().broadcastMessage("§c§lServer is restarting now!");
-                                executeShutdown();
-                                isRunning = false;
-                            }, 20L);
-                        }
+                if (plugin.getConfigManager().shouldExecuteShutdown()) {
+                    // Only wait for backup if one is actually running (scheduled + wait-for-backup enabled)
+                    boolean backupRunning = plugin.isScheduledRestartActive() && plugin.getConfigManager().shouldWaitForBackup() && plugin.isBackupRunning();
+                    if (backupRunning) {
+                        plugin.getMessageManager().broadcastMessage(plugin.getMessageManager().getMessage("scheduled-restart.backup-delayed", "§eRestart delayed – backup in progress. Will restart when backup completes."));
+                        plugin.runDelayedGlobal(RestartManager.this::waitForBackupThenShutdown, 20L);
                     } else {
-                        plugin.getLogger().info("Restart countdown completed. Server shutdown was disabled in config.");
-                        isRunning = false;
+                        // Normal restart
+                        plugin.runDelayedGlobal(() -> {
+                            plugin.getMessageManager().broadcastMessage("§c§lServer is restarting now!");
+                            executeShutdown();
+                            isRunning = false;
+                        }, 20L);
                     }
+                } else {
+                    plugin.getLogger().info("Restart countdown completed. Server shutdown was disabled in config.");
+                    isRunning = false;
                 }
             }
-        }.runTaskTimer(plugin, 20L, 20L); // Run every second
+        }, 20L, 20L);
 
         // Start the announcement task
         startAnnouncements();
@@ -102,12 +97,12 @@ public class RestartManager {
     private void waitForBackupThenShutdown() {
         if (plugin.isBackupRunning()) {
             plugin.getMessageManager().broadcastMessage(plugin.getMessageManager().getMessage("scheduled-restart.backup-delayed", "§eRestart delayed – backup in progress. Will restart when backup completes."));
-            Bukkit.getScheduler().runTaskLater(plugin, RestartManager.this::waitForBackupThenShutdown, 2400L); // 2 minutes
+            plugin.runDelayedGlobal(RestartManager.this::waitForBackupThenShutdown, 2400L); // 2 minutes
             return;
         }
         // Backup finished – wait the delay then reboot
         int delaySeconds = plugin.getConfigManager().getWaitForBackupDelaySeconds();
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        plugin.runDelayedGlobal(() -> {
             plugin.getMessageManager().broadcastMessage("§c§lServer is restarting now!");
             executeShutdown();
             isRunning = false;
@@ -143,20 +138,15 @@ public class RestartManager {
             plugin.getLogger().info("Scheduling next announcement in " + nextInterval + "s (time remaining: " + timeRemaining + "s)");
         }
         
-        announcementTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!isRunning) {
-                    return;
-                }
-                
-                // Send announcement
-                sendAnnouncement(timeRemaining);
-                
-                // Schedule the next announcement (this will recalculate the interval)
-                scheduleNextAnnouncement();
+        announcementTask = plugin.scheduleGlobalDelayed(() -> {
+            if (!isRunning) {
+                return;
             }
-        }.runTaskLater(plugin, nextInterval * 20L);
+
+            sendAnnouncement(timeRemaining);
+
+            scheduleNextAnnouncement();
+        }, nextInterval * 20L);
     }
     
     private int getNextAnnouncementInterval(int timeLeft) {

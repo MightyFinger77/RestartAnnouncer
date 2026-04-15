@@ -2,8 +2,6 @@ package com.restartannouncer.managers;
 
 import com.restartannouncer.RestartAnnouncerPlugin;
 import com.restartannouncer.schedule.ScheduledRestartSpec;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -21,7 +19,7 @@ public class ScheduledRestartManager {
     private static final int TEN_MINUTES_SECONDS = 600;
 
     private final RestartAnnouncerPlugin plugin;
-    private BukkitTask checkTask;
+    private RestartAnnouncerPlugin.TaskHandle checkTask;
     private int lastReminderHour = -1;
 
     public ScheduledRestartManager(RestartAnnouncerPlugin plugin) {
@@ -37,17 +35,16 @@ public class ScheduledRestartManager {
             return;
         }
 
-        checkTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!plugin.getConfigManager().isScheduledRestartEnabled()) {
-                    cancel();
+        checkTask = plugin.scheduleGlobalRepeating(() -> {
+            if (!plugin.getConfigManager().isScheduledRestartEnabled()) {
+                if (checkTask != null) {
+                    checkTask.cancel();
                     checkTask = null;
-                    return;
                 }
-                tick();
+                return;
             }
-        }.runTaskTimer(plugin, CHECK_INTERVAL_TICKS, CHECK_INTERVAL_TICKS);
+            tick();
+        }, CHECK_INTERVAL_TICKS, CHECK_INTERVAL_TICKS);
     }
 
     public void stop() {

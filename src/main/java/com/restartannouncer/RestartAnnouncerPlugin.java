@@ -8,9 +8,17 @@ import com.restartannouncer.managers.ScheduledRestartManager;
 import com.restartannouncer.util.BackupChecker;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
+
 import java.util.function.Consumer;
 
 public class RestartAnnouncerPlugin extends JavaPlugin {
+
+    /** Cancel a task scheduled via {@link #scheduleGlobalRepeating} or {@link #scheduleGlobalDelayed}. */
+    @FunctionalInterface
+    public interface TaskHandle {
+        void cancel();
+    }
 
     private static RestartAnnouncerPlugin instance;
     private ConfigManager configManager;
@@ -74,6 +82,61 @@ public class RestartAnnouncerPlugin extends JavaPlugin {
             } catch (Exception ignored) { }
         }
         getServer().getScheduler().runTaskAsynchronously(this, task);
+    }
+
+    /**
+     * One-shot delayed task on the global region (Folia) or main thread (Paper).
+     */
+    public void runDelayedGlobal(Runnable task, long delayTicks) {
+        runLater(task, delayTicks);
+    }
+
+    private static void cancelFoliaScheduled(Object scheduledTask) {
+        if (scheduledTask == null) {
+            return;
+        }
+        try {
+            scheduledTask.getClass().getMethod("cancel").invoke(scheduledTask);
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Repeating task suitable for Folia ({@code GlobalRegionScheduler}) and Paper ({@code runTaskTimer}).
+     */
+    public TaskHandle scheduleGlobalRepeating(Runnable task, long initialDelayTicks, long periodTicks) {
+        if (isFolia()) {
+            try {
+                Object scheduler = getServer().getClass().getMethod("getGlobalRegionScheduler").invoke(getServer());
+                Object scheduled = scheduler.getClass()
+                    .getMethod("runAtFixedRate", Plugin.class, Consumer.class, long.class, long.class)
+                    .invoke(scheduler, this, (Consumer<Object>) st -> task.run(), initialDelayTicks, periodTicks);
+                return () -> cancelFoliaScheduled(scheduled);
+            } catch (Exception e) {
+                getLogger().warning("Folia scheduleGlobalRepeating failed, falling back to BukkitScheduler: " + e.getMessage());
+            }
+        }
+        BukkitTask bukkitTask = getServer().getScheduler().runTaskTimer(this, task, initialDelayTicks, periodTicks);
+        return bukkitTask::cancel;
+    }
+
+    /**
+     * One-shot delayed task with a cancel handle (Folia {@code runDelayed} / Paper {@code runTaskLater}).
+     */
+    public TaskHandle scheduleGlobalDelayed(Runnable task, long delayTicks) {
+        if (isFolia()) {
+            try {
+                Object scheduler = getServer().getClass().getMethod("getGlobalRegionScheduler").invoke(getServer());
+                Object scheduled = scheduler.getClass()
+                    .getMethod("runDelayed", Plugin.class, Consumer.class, long.class)
+                    .invoke(scheduler, this, (Consumer<Object>) st -> task.run(), delayTicks);
+                return () -> cancelFoliaScheduled(scheduled);
+            } catch (Exception e) {
+                getLogger().warning("Folia scheduleGlobalDelayed failed, falling back to BukkitScheduler: " + e.getMessage());
+            }
+        }
+        BukkitTask bukkitTask = getServer().getScheduler().runTaskLater(this, task, delayTicks);
+        return bukkitTask::cancel;
     }
     
     @Override

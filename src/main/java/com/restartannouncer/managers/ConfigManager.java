@@ -289,12 +289,8 @@ public class ConfigManager {
                             // Add list items from user config
                             List<?> userList = (List<?>) userValue;
                             for (Object item : userList) {
-                                String itemStr = formatYamlValue(item);
-                                // Remove quotes if they were added (lists often don't need them)
-                                if (itemStr.startsWith("\"") && itemStr.endsWith("\"")) {
-                                    itemStr = itemStr.substring(1, itemStr.length() - 1);
-                                }
-                                merged.add(" ".repeat(currentIndent + 2) + "- " + itemStr);
+                                // Keep formatYamlValue output as-is so strings stay valid YAML (! * ** § etc.)
+                                merged.add(" ".repeat(currentIndent + 2) + "- " + formatYamlValue(item));
                             }
                             // Skip the default list items and their comments - we've already added user's
                             // Skip until we're out of the list (next line at same or less indent)
@@ -450,29 +446,20 @@ public class ConfigManager {
         if (value == null) {
             return "null";
         } else if (value instanceof String) {
-            // Check if it needs quotes
-            String str = (String) value;
-            if (str.contains(":") || str.contains("#") || str.trim().isEmpty() || 
-                str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false") || 
-                str.equalsIgnoreCase("null") || str.matches("^-?\\d+$")) {
-                return "\"" + str.replace("\"", "\\\"") + "\"";
-            }
-            return str;
+            // Always double-quote strings so migration round-trips safely through SnakeYAML.
+            return "\"" + escapeForYamlDoubleQuotedString((String) value) + "\"";
         } else if (value instanceof Boolean) {
             return value.toString();
         } else if (value instanceof Number) {
             return value.toString();
         } else if (value instanceof List) {
-            // Format list
             List<?> list = (List<?>) value;
             if (list.isEmpty()) {
                 return "[]";
             }
-            // For lists, we'll just return the first approach - inline if simple
             if (list.size() == 1 && (list.get(0) instanceof String || list.get(0) instanceof Number)) {
                 return "[" + formatYamlValue(list.get(0)) + "]";
             }
-            // Multi-line list - return as inline for now, could be improved
             StringBuilder sb = new StringBuilder("[");
             for (int i = 0; i < list.size(); i++) {
                 if (i > 0) sb.append(", ");
@@ -483,6 +470,28 @@ public class ConfigManager {
         } else {
             return value.toString();
         }
+    }
+
+    private String escapeForYamlDoubleQuotedString(String str) {
+        StringBuilder sb = new StringBuilder(str.length() + 8);
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            switch (c) {
+                case '\\' -> sb.append("\\\\");
+                case '"' -> sb.append("\\\"");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c < 0x20) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.toString();
     }
     
     /**

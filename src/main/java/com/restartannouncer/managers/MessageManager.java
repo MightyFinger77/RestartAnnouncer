@@ -202,11 +202,8 @@ public class MessageManager {
                             merged.add(line);
                             List<?> userList = (List<?>) userValue;
                             for (Object item : userList) {
-                                String itemStr = formatYamlValue(item);
-                                if (itemStr.startsWith("\"") && itemStr.endsWith("\"")) {
-                                    itemStr = itemStr.substring(1, itemStr.length() - 1);
-                                }
-                                merged.add(" ".repeat(currentIndent + 2) + "- " + itemStr);
+                                // Keep formatYamlValue output as-is so strings stay valid YAML (! * ** § etc.)
+                                merged.add(" ".repeat(currentIndent + 2) + "- " + formatYamlValue(item));
                             }
                             while (i + 1 < defaultLines.size()) {
                                 String nextLine = defaultLines.get(i + 1);
@@ -322,13 +319,8 @@ public class MessageManager {
         if (value == null) {
             return "null";
         } else if (value instanceof String) {
-            String str = (String) value;
-            if (str.contains(":") || str.contains("#") || str.trim().isEmpty() || 
-                str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false") || 
-                str.equalsIgnoreCase("null") || str.matches("^-?\\d+$")) {
-                return "\"" + str.replace("\"", "\\\"") + "\"";
-            }
-            return str;
+            // Always double-quote strings so migration round-trips safely through SnakeYAML.
+            return "\"" + escapeForYamlDoubleQuotedString((String) value) + "\"";
         } else if (value instanceof Boolean) {
             return value.toString();
         } else if (value instanceof Number) {
@@ -351,6 +343,28 @@ public class MessageManager {
         } else {
             return value.toString();
         }
+    }
+
+    private String escapeForYamlDoubleQuotedString(String str) {
+        StringBuilder sb = new StringBuilder(str.length() + 8);
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            switch (c) {
+                case '\\' -> sb.append("\\\\");
+                case '"' -> sb.append("\\\"");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c < 0x20) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.toString();
     }
     
     private void updateConfigVersion(List<String> lines, int newVersion, List<String> defaultLines, String versionKey) {
